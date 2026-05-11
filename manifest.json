@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Markdown Reader",
+  "version": "1.1.2",
+  "description": "在 Chrome 中打开本地 Markdown 文件时，自动渲染为 HTML 阅读页，并支持浅色/黑色主题切换",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Markdown Reader",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "file:///*"
+      ],
+      "js": [
+        "markdown-viewer.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": [
+    "file:///*"
+  ]
+}

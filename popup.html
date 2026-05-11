@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <title>Markdown Reader</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        width: 340px;
+        margin: 0;
+        padding: 14px;
+        color: #1f2937;
+        background: #ffffff;
+        font: 13px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+      .icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        color: #ffffff;
+        background: #2563eb;
+        border-radius: 8px;
+        font-weight: 700;
+      }
+      h1 { margin: 0; color: #111827; font-size: 15px; font-weight: 650; }
+      .sub { margin: 2px 0 0; color: #6b7280; font-size: 12px; }
+      .status {
+        margin: 0 0 12px;
+        padding: 10px 11px;
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        background: #eff6ff;
+      }
+      .status.warn { border-color: #fed7aa; background: #fff7ed; }
+      .status.ok { border-color: #bbf7d0; background: #f0fdf4; }
+      .status-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 0 0 4px;
+        color: #111827;
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .dot { width: 8px; height: 8px; border-radius: 999px; background: #2563eb; }
+      .warn .dot { background: #f97316; }
+      .ok .dot { background: #22c55e; }
+      .status p { margin: 0; color: #4b5563; }
+      .guide {
+        margin: 0 0 12px;
+        padding: 10px 11px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+      .guide-title { margin: 0 0 8px; color: #111827; font-weight: 650; }
+      ol { margin: 0; padding-left: 19px; color: #374151; }
+      li + li { margin-top: 5px; }
+      code {
+        padding: 1px 4px;
+        color: #1d4ed8;
+        background: #eff6ff;
+        border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+      }
+      .actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+      button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        min-height: 32px;
+        margin: 0;
+        padding: 6px 11px;
+        border: 0;
+        border-radius: 7px;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+      }
+      .primary { color: #ffffff; background: #2563eb; }
+      .primary:hover { background: #1d4ed8; }
+      .ghost { color: #4b5563; background: #f3f4f6; }
+      .ghost:hover { color: #111827; background: #e5e7eb; }
+      .hint { margin: 10px 0 0; color: #6b7280; font-size: 12px; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="icon" aria-hidden="true">M</div>
+      <div>
+        <h1>Markdown Reader</h1>
+        <p class="sub">本地 Markdown 自动渲染</p>
+      </div>
+    </div>
+
+    <section class="status" id="statusBox" aria-live="polite">
+      <div class="status-title"><span class="dot"></span><span id="statusTitle">正在检查文件访问权限</span></div>
+      <p id="statusDesc">请稍候...</p>
+    </section>
+
+    <section class="guide" id="guideBox" hidden>
+      <p class="guide-title">开启方式</p>
+      <ol>
+        <li>点击下面的「去开启」。</li>
+        <li>在扩展详情页找到「允许访问文件网址」。</li>
+        <li>打开开关后，重新打开本地 <code>.md</code> 文件。</li>
+      </ol>
+      <p class="hint">Chrome 要求用户手动授权，扩展无法自动开启。</p>
+    </section>
+
+    <div class="actions">
+      <button type="button" class="ghost" id="checkAgain">重新检查</button>
+      <button type="button" class="primary" id="openDetails">
+        去开启
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 17 17 7" />
+          <path d="M8 7h9v9" />
+        </svg>
+      </button>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
