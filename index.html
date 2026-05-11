@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Markdown Reader - Chrome 本地 Markdown 阅读扩展</title>
+  <meta name="description" content="Markdown Reader 可以在 Chrome 中打开本地 Markdown 文件并渲染为阅读页面，支持左侧目录导航、浅色/黑色主题和本地处理。">
+  <meta property="og:title" content="Markdown Reader">
+  <meta property="og:description" content="在 Chrome 中直接阅读本地 Markdown 文件，支持目录导航、主题切换和本地处理。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://markdownreader.cn/">
+  <link rel="icon" href="icons/icon-32.png">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090d13;
+      --surface: #111822;
+      --surface-2: #151f2b;
+      --line: #293544;
+      --text: #f2f6fb;
+      --muted: #9aa8b7;
+      --soft: #cbd6e2;
+      --blue: #79b8ff;
+      --blue-strong: #4d98ff;
+      --green: #74d6a6;
+      --paper: #f8fafc;
+      --paper-text: #172033;
+      --paper-muted: #667085;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        linear-gradient(180deg, rgba(35, 48, 66, 0.62), rgba(9, 13, 19, 0) 520px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 76px),
+        var(--bg);
+      font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .wrap {
+      width: min(1160px, calc(100vw - 40px));
+      margin: 0 auto;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 72px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 750;
+    }
+
+    .brand img {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      box-shadow: 0 12px 24px rgba(77, 152, 255, 0.24);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-install {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 13px;
+      color: #07111f;
+      background: var(--blue);
+      border-radius: 7px;
+      font-weight: 720;
+    }
+
+    .hero {
+      min-height: calc(100vh - 72px);
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(520px, 1.1fr);
+      gap: 44px;
+      align-items: center;
+      padding: 58px 0 76px;
+    }
+
+    .eyebrow {
+      margin-bottom: 14px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    h1 {
+      max-width: 600px;
+      margin: 0;
+      font-size: clamp(42px, 6vw, 68px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 580px;
+      margin: 22px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.75;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .button {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      border-radius: 7px;
+      border: 1px solid var(--line);
+      font-weight: 720;
+    }
+
+    .button.primary {
+      color: #07111f;
+      background: var(--blue);
+      border-color: var(--blue);
+    }
+
+    .button.secondary {
+      color: var(--text);
+      background: rgba(255,255,255,0.035);
+    }
+
+    .trust-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 32px;
+      max-width: 640px;
+    }
+
+    .trust-item {
+      padding: 12px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.035);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .trust-item strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .preview {
+      padding: 14px;
+      background: linear-gradient(180deg, #111a26, #0e151f);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 28px 70px rgba(0,0,0,0.36);
+    }
+
+    .browser-bar {
+      height: 36px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: -2px -2px 14px;
+      padding: 0 4px 12px;
+      color: #7f8b99;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #3a4655;
+    }
+
+    .address {
+      flex: 1;
+      min-width: 0;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      overflow: hidden;
+      white-space: nowrap;
+      color: #8fa0b2;
+      background: #0b111a;
+      border: 1px solid #223045;
+      border-radius: 7px;
+    }
+
+    .reader {
+      display: grid;
+      grid-template-columns: 168px minmax(0, 1fr);
+      gap: 16px;
+      min-height: 430px;
+    }
+
+    .toc {
+      padding: 14px 12px;
+      color: var(--paper-muted);
+      background: #fff;
+      border: 1px solid #d8e0ea;
+      border-radius: 8px;
+    }
+
+    .toc-title {
+      margin-bottom: 12px;
+      color: #344054;
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .toc-line {
+      height: 8px;
+      margin: 12px 0;
+      background: #e4eaf2;
+      border-radius: 99px;
+    }
+
+    .toc-line.active {
+      width: 90%;
+      background: #d8e8ff;
+    }
+
+    .toc-line.sub {
+      width: 72%;
+      margin-left: 14px;
+    }
+
+    .doc {
+      min-width: 0;
+      padding: 28px 34px;
+      color: var(--paper-text);
+      background: var(--paper);
+      border: 1px solid #dce3ec;
+      border-radius: 8px;
+    }
+
+    .file {
+      margin-bottom: 18px;
+      color: var(--paper-muted);
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    .doc h2 {
+      margin: 0 0 14px;
+      padding-bottom: 10px;
+      color: #101828;
+      border-bottom: 1px solid #dce3ec;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    .doc h3 {
+      margin: 26px 0 12px;
+      color: #1d2939;
+      font-size: 19px;
+    }
+
+    .line {
+      height: 10px;
+      margin: 12px 0;
+      background: #dde5ef;
+      border-radius: 99px;
+    }
+
+    .line.wide { width: 92%; }
+    .line.mid { width: 72%; }
+
+    .mock-table {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      margin-top: 14px;
+      overflow: hidden;
+      border: 1px solid #dce3ec;
+      border-radius: 7px;
+    }
+
+    .cell {
+      height: 34px;
+      background: #fff;
+      border-right: 1px solid #dce3ec;
+      border-bottom: 1px solid #dce3ec;
+    }
+
+    .cell:nth-child(2n) { border-right: 0; }
+    .cell:nth-last-child(-n+2) { border-bottom: 0; }
+
+    .band {
+      padding: 64px 0;
+      background: rgba(255,255,255,0.018);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-head h2,
+    .privacy h2 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .section-head p,
+    .privacy p {
+      max-width: 540px;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .step,
+    .privacy-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .step {
+      min-height: 176px;
+      padding: 20px;
+    }
+
+    .num {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 18px;
+      color: #07111f;
+      background: var(--blue);
+      border-radius: 7px;
+      font-weight: 780;
+    }
+
+    .step h3,
+    .privacy-card strong {
+      margin: 0 0 8px;
+      color: var(--text);
+      font-size: 18px;
+    }
+
+    .step p,
+    .privacy-card span {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .privacy {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 34px;
+      align-items: start;
+      padding: 58px 0 70px;
+    }
+
+    .privacy p { margin-top: 14px; }
+
+    .privacy-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .privacy-card { padding: 18px; }
+
+    footer {
+      padding: 28px 0 36px;
+      color: var(--muted);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 13px;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 18px;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    @media (max-width: 920px) {
+      .hero,
+      .privacy {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 36px;
+      }
+
+      .reader { grid-template-columns: 138px minmax(0, 1fr); }
+
+      .trust-strip,
+      .steps,
+      .privacy-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head {
+        display: block;
+      }
+
+      .section-head p { margin-top: 10px; }
+    }
+
+    @media (max-width: 640px) {
+      .wrap { width: min(100% - 28px, 1160px); }
+      .nav-links a:not(.nav-install) { display: none; }
+      h1 { font-size: 40px; }
+      .reader {
+        grid-template-columns: 96px minmax(0, 1fr);
+        gap: 10px;
+      }
+      .toc { padding: 12px 8px; }
+      .toc-title { font-size: 11px; }
+      .toc-line.sub { margin-left: 8px; }
+      .doc { padding: 22px; }
+      .doc h2 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="wrap">
+    <nav class="nav" aria-label="主导航">
+      <a class="brand" href="/">
+        <img src="icons/icon-48.png" alt="">
+        <span>Markdown Reader</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">功能</a>
+        <a href="#setup">安装引导</a>
+        <a href="#privacy">隐私</a>
+        <a class="nav-install" href="https://chromewebstore.google.com/detail/markdown-reader/pknkbjoedbednhloppcpfghnepchinel">安装扩展</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="wrap hero">
+      <div>
+        <div class="eyebrow">本地 Markdown 阅读扩展</div>
+        <h1>在 Chrome 里直接阅读本地 Markdown 文件</h1>
+        <p class="lead">Markdown Reader 会把本地 .md、.markdown、.mdown 和 .mkd 文件渲染成清爽的阅读页面，支持左侧目录导航、表格、代码块和浅色/黑色主题。</p>
+        <div class="actions">
+          <a class="button primary" href="https://chromewebstore.google.com/detail/markdown-reader/pknkbjoedbednhloppcpfghnepchinel">安装 Chrome 扩展</a>
+          <a class="button secondary" href="https://github.com/sshnii/markdown-reader">查看 GitHub</a>
+        </div>
+        <div class="trust-strip" id="features">
+          <div class="trust-item"><strong>目录导航</strong>自动提取 1-3 级标题，左侧快速跳转。</div>
+          <div class="trust-item"><strong>本地处理</strong>文件内容只在浏览器中处理，不上传服务器。</div>
+          <div class="trust-item"><strong>无需账号</strong>安装后即可使用，不需要登录或云端同步。</div>
+        </div>
+      </div>
+
+      <div class="preview" aria-label="Markdown Reader 阅读页面预览">
+        <div class="browser-bar">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <div class="address">file:///Users/me/docs/readme.md</div>
+        </div>
+        <div class="reader">
+          <aside class="toc" aria-label="预览目录">
+            <div class="toc-title">目录</div>
+            <div class="toc-line active"></div>
+            <div class="toc-line"></div>
+            <div class="toc-line sub"></div>
+            <div class="toc-line"></div>
+            <div class="toc-line sub"></div>
+            <div class="toc-line"></div>
+          </aside>
+          <article class="doc">
+            <div class="file">readme.md</div>
+            <h2>Project README</h2>
+            <div class="line wide"></div>
+            <div class="line mid"></div>
+            <h3>Usage</h3>
+            <div class="line wide"></div>
+            <div class="line"></div>
+            <div class="mock-table" aria-hidden="true">
+              <div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell"></div>
+              <div class="cell"></div><div class="cell"></div>
+            </div>
+            <h3>Theme</h3>
+            <div class="line mid"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="setup">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>开启本地文件访问后即可使用</h2>
+          <p>Chrome 默认不会自动授予扩展 file:// 文件访问权限。安装后按三步开启一次，本地 Markdown 文件就能自动渲染。</p>
+        </div>
+        <div class="steps">
+          <div class="step">
+            <div class="num">1</div>
+            <h3>安装扩展</h3>
+            <p>从 Chrome Web Store 安装 Markdown Reader。</p>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <h3>允许访问文件网址</h3>
+            <p>进入扩展详情页，开启“允许访问文件网址”。扩展弹窗也会提供三步提示。</p>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <h3>打开 Markdown 文件</h3>
+            <p>在 Finder 中选择 .md 文件，用 Chrome 打开后会自动渲染阅读页。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap privacy" id="privacy">
+      <div>
+        <h2>面向本地阅读，不做云端同步</h2>
+        <p>Markdown Reader 只解决一件事：让本地 Markdown 文件在 Chrome 中更容易阅读。它不要求登录，不上传文档，也不依赖云端服务。</p>
+      </div>
+      <div class="privacy-grid">
+        <div class="privacy-card"><strong>文件留在本机</strong><span>Markdown 内容只在浏览器中读取和渲染。</span></div>
+        <div class="privacy-card"><strong>不需要账号</strong><span>没有注册、登录或云端工作区。</span></div>
+        <div class="privacy-card"><strong>权限清晰</strong><span>file:// 访问只用于读取本地 Markdown 文件。</span></div>
+        <div class="privacy-card"><strong>开源可查</strong><span>源码和商店包保存在 GitHub 仓库中。</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-inner">
+      <div>© 2026 Markdown Reader</div>
+      <div class="footer-links">
+        <a href="https://github.com/sshnii/markdown-reader">GitHub</a>
+        <a href="https://github.com/sshnii/markdown-reader/issues">反馈问题</a>
+        <a href="https://chromewebstore.google.com/detail/markdown-reader/pknkbjoedbednhloppcpfghnepchinel">Chrome Web Store</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
