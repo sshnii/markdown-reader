@@ -99,6 +99,7 @@
 
   function renderInline(markdown, baseUrl) {
     const codeSpans = [];
+    const htmlSpans = [];
     let text = String(markdown || "").replace(/`([^`]+)`/g, (_, code) => {
       const token = "\u0000CODE" + codeSpans.length + "\u0000";
       codeSpans.push("<code>" + escapeHtml(code) + "</code>");
@@ -111,13 +112,17 @@
       const src = escapeAttr(attrForUrl(url, baseUrl));
       const safeAlt = escapeAttr(alt);
       const safeTitle = title ? ' title="' + escapeAttr(title) + '"' : "";
-      return '<img src="' + src + '" alt="' + safeAlt + '"' + safeTitle + ">";
+      const token = "\u0000HTML" + htmlSpans.length + "\u0000";
+      htmlSpans.push('<img src="' + src + '" alt="' + safeAlt + '"' + safeTitle + ">");
+      return token;
     });
 
     text = text.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, (_, label, url, title) => {
       const href = escapeAttr(attrForUrl(url, baseUrl));
       const safeTitle = title ? ' title="' + escapeAttr(title) + '"' : "";
-      return '<a href="' + href + '"' + safeTitle + ">" + label + "</a>";
+      const token = "\u0000HTML" + htmlSpans.length + "\u0000";
+      htmlSpans.push('<a href="' + href + '"' + safeTitle + ">" + label + "</a>");
+      return token;
     });
 
     text = text
@@ -131,6 +136,10 @@
 
     codeSpans.forEach((html, index) => {
       text = text.replace(new RegExp("\u0000CODE" + index + "\u0000", "g"), html);
+    });
+
+    htmlSpans.forEach((html, index) => {
+      text = text.replace(new RegExp("\u0000HTML" + index + "\u0000", "g"), html);
     });
 
     return text;
