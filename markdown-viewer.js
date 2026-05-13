@@ -108,21 +108,23 @@
 
     text = escapeHtml(text);
 
+    const preserveHtml = html => {
+      const token = "\u0000HTML" + htmlSpans.length + "\u0000";
+      htmlSpans.push(html);
+      return token;
+    };
+
     text = text.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, (_, alt, url, title) => {
       const src = escapeAttr(attrForUrl(url, baseUrl));
       const safeAlt = escapeAttr(alt);
       const safeTitle = title ? ' title="' + escapeAttr(title) + '"' : "";
-      const token = "\u0000HTML" + htmlSpans.length + "\u0000";
-      htmlSpans.push('<img src="' + src + '" alt="' + safeAlt + '"' + safeTitle + ">");
-      return token;
+      return preserveHtml('<img src="' + src + '" alt="' + safeAlt + '"' + safeTitle + ">");
     });
 
     text = text.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, (_, label, url, title) => {
       const href = escapeAttr(attrForUrl(url, baseUrl));
       const safeTitle = title ? ' title="' + escapeAttr(title) + '"' : "";
-      const token = "\u0000HTML" + htmlSpans.length + "\u0000";
-      htmlSpans.push('<a href="' + href + '"' + safeTitle + ">" + label + "</a>");
-      return token;
+      return preserveHtml('<a href="' + href + '"' + safeTitle + ">" + label + "</a>");
     });
 
     text = text
@@ -134,12 +136,12 @@
 
     text = text.replace(/  \n/g, "<br>");
 
-    codeSpans.forEach((html, index) => {
-      text = text.replace(new RegExp("\u0000CODE" + index + "\u0000", "g"), html);
-    });
-
     htmlSpans.forEach((html, index) => {
       text = text.replace(new RegExp("\u0000HTML" + index + "\u0000", "g"), html);
+    });
+
+    codeSpans.forEach((html, index) => {
+      text = text.replace(new RegExp("\u0000CODE" + index + "\u0000", "g"), html);
     });
 
     return text;

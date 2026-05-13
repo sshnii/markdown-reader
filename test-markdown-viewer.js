@@ -24,12 +24,14 @@ assert.ok(rendered.html.includes('<h2 id="heading-2">使用方式</h2>'));
 assert.ok(rendered.html.includes('<h3 id="heading-3">使用方式</h3>'));
 assert.ok(rendered.html.includes("<h4>不进入目录</h4>"));
 
-const imageRendered = renderMarkdownDocument(
+const imageWithUnderscores = renderMarkdownDocument(
   "![Rounds(1) 调用返回](images/Rounds_1_call_screenshot.png)",
-  "file:///Users/songshaohua/Desktop/合约分析/01_报告/JUST_GAME_分析报告_重组版.md"
+  "file:///Users/songshaohua/Desktop/%E5%90%88%E7%BA%A6%E5%88%86%E6%9E%90/01_%E6%8A%A5%E5%91%8A/JUST_GAME.md"
 );
 
-assert.ok(imageRendered.html.includes('src="file:///Users/songshaohua/Desktop/%E5%90%88%E7%BA%A6%E5%88%86%E6%9E%90/01_%E6%8A%A5%E5%91%8A/images/Rounds_1_call_screenshot.png"'));
-assert.ok(!imageRendered.html.includes("<em>"));
+assert.ok(imageWithUnderscores.html.includes(
+  '<img src="file:///Users/songshaohua/Desktop/%E5%90%88%E7%BA%A6%E5%88%86%E6%9E%90/01_%E6%8A%A5%E5%91%8A/images/Rounds_1_call_screenshot.png" alt="Rounds(1) 调用返回">'
+));
+assert.ok(!imageWithUnderscores.html.includes("<em>"));
 
 console.log("markdown viewer tests passed");
