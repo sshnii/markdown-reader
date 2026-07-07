@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Markdown Reader - Chrome 本地 Markdown 阅读扩展</title>
-  <meta name="description" content="Markdown Reader 可以在 Chrome 中打开本地 Markdown 文件并渲染为阅读页面，支持左侧目录导航、浅色/黑色主题和本地处理。">
+  <meta name="description" content="Markdown Reader 可以在 Chrome 中打开本地 Markdown 文件并渲染为阅读页面，支持左侧目录导航、浅色/黑色主题、一键导出 HTML，全部本地处理。">
   <meta property="og:title" content="Markdown Reader">
-  <meta property="og:description" content="在 Chrome 中直接阅读本地 Markdown 文件，支持目录导航、主题切换和本地处理。">
+  <meta property="og:description" content="在 Chrome 中直接阅读本地 Markdown 文件，支持目录导航、主题切换、一键下载 HTML，全部本地处理。">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://markdownreader.cn/">
   <link rel="icon" href="icons/icon-32.png">
@@ -259,12 +259,53 @@
     }
 
     .doc {
+      position: relative;
       min-width: 0;
       padding: 28px 34px;
       color: var(--paper-text);
       background: var(--paper);
       border: 1px solid #dce3ec;
       border-radius: 8px;
+    }
+
+    .mock-toolbar {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 6px;
+      z-index: 2;
+    }
+
+    .mock-btn {
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 8px;
+      color: #334155;
+      background: #fff;
+      border: 1px solid #d8e0ea;
+      border-radius: 6px;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .mock-btn.icon {
+      width: 26px;
+      padding: 0;
+      justify-content: center;
+    }
+
+    .mock-btn svg {
+      width: 12px;
+      height: 12px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .file {
@@ -494,15 +535,15 @@
       <div>
         <div class="eyebrow">本地 Markdown 阅读扩展</div>
         <h1>在 Chrome 里直接阅读本地 Markdown 文件</h1>
-        <p class="lead">Markdown Reader 会把本地 .md、.markdown、.mdown 和 .mkd 文件渲染成清爽的阅读页面，支持左侧目录导航、表格、代码块和浅色/黑色主题。</p>
+        <p class="lead">Markdown Reader 会把本地 .md、.markdown、.mdown 和 .mkd 文件渲染成清爽的阅读页面，支持左侧目录导航、表格、代码块、浅色/黑色主题，还能一键导出为独立 HTML 文件。</p>
         <div class="actions">
           <a class="button primary" href="https://chromewebstore.google.com/detail/markdown-reader/pknkbjoedbednhloppcpfghnepchinel">安装 Chrome 扩展</a>
           <a class="button secondary" href="https://github.com/sshnii/markdown-reader">查看 GitHub</a>
         </div>
         <div class="trust-strip" id="features">
           <div class="trust-item"><strong>目录导航</strong>自动提取 1-3 级标题，左侧快速跳转。</div>
-          <div class="trust-item"><strong>本地处理</strong>文件内容只在浏览器中处理，不上传服务器。</div>
-          <div class="trust-item"><strong>无需账号</strong>安装后即可使用，不需要登录或云端同步。</div>
+          <div class="trust-item"><strong>下载 HTML</strong>一键把当前阅读页导出为独立 HTML 文件。</div>
+          <div class="trust-item"><strong>本地处理</strong>不登录、不上传，内容只在浏览器中处理。</div>
         </div>
       </div>
 
@@ -524,6 +565,10 @@
             <div class="toc-line"></div>
           </aside>
           <article class="doc">
+            <div class="mock-toolbar" aria-hidden="true">
+              <span class="mock-btn"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>下载 html</span>
+              <span class="mock-btn icon"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.8 6.8 0 0 0 9.8 9.8Z"/></svg></span>
+            </div>
             <div class="file">readme.md</div>
             <h2>Project README</h2>
             <div class="line wide"></div>
