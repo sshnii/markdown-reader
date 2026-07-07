@@ -34,4 +34,31 @@ assert.ok(imageWithUnderscores.html.includes(
 ));
 assert.ok(!imageWithUnderscores.html.includes("<em>"));
 
+const xssCases = renderMarkdownDocument([
+  "[js](javascript:alert(1))",
+  "[JS-mixed-case](JavaScript:alert(1))",
+  "[vb](vbscript:msgbox(1))",
+  "[data-html](data:text/html,<script>alert(1)</script>)",
+  "[safe-http](https://example.com/x)",
+  "[safe-rel](./other.md)",
+  "[safe-mailto](mailto:a@b.c)",
+  "[safe-anchor](#section)",
+  "![img-rel](./pic.png)",
+  "![img-data](data:image/png;base64,AAA)"
+].join("\n\n"), "file:///tmp/x.md");
+
+// dangerous schemes stripped to empty href
+assert.ok(xssCases.html.includes('<a href="">js</a>'), "javascript: not blocked");
+assert.ok(xssCases.html.includes('<a href="">JS-mixed-case</a>'), "mixed-case javascript: not blocked");
+assert.ok(xssCases.html.includes('<a href="">vb</a>'), "vbscript: not blocked");
+assert.ok(xssCases.html.includes('<a href="">data-html</a>'), "data: in link not blocked");
+// safe schemes preserved
+assert.ok(xssCases.html.includes('<a href="https://example.com/x">safe-http</a>'), "https broken");
+assert.ok(xssCases.html.includes('<a href="file:///tmp/other.md">safe-rel</a>'), "relative broken");
+assert.ok(xssCases.html.includes('<a href="mailto:a@b.c">safe-mailto</a>'), "mailto broken");
+assert.ok(xssCases.html.includes('<a href="file:///tmp/x.md#section">safe-anchor</a>'), "anchor broken");
+// image: data: allowed
+assert.ok(xssCases.html.includes('src="file:///tmp/pic.png"'), "relative image broken");
+assert.ok(xssCases.html.includes('src="data:image/png;base64,AAA"'), "data: image should be allowed");
+
 console.log("markdown viewer tests passed");

@@ -13,6 +13,8 @@
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>'
     }
   };
+  const DOWNLOAD_LABEL = "下载 html";
+  const DOWNLOAD_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>';
 
   function isMarkdownFileUrl(url) {
     try {
@@ -87,12 +89,18 @@
     });
   }
 
-  function attrForUrl(url, baseUrl) {
+  const DANGEROUS_SCHEMES = /^(javascript|vbscript):/i;
+
+  function attrForUrl(url, baseUrl, allowData) {
     const trimmed = String(url || "").trim();
     if (!trimmed) return "";
     try {
-      return new URL(trimmed, baseUrl).href;
+      const resolved = new URL(trimmed, baseUrl);
+      if (DANGEROUS_SCHEMES.test(resolved.protocol)) return "";
+      if (resolved.protocol === "data:" && !allowData) return "";
+      return resolved.href;
     } catch {
+      if (DANGEROUS_SCHEMES.test(trimmed)) return "";
       return trimmed;
     }
   }
@@ -115,7 +123,7 @@
     };
 
     text = text.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, (_, alt, url, title) => {
-      const src = escapeAttr(attrForUrl(url, baseUrl));
+      const src = escapeAttr(attrForUrl(url, baseUrl, true));
       const safeAlt = escapeAttr(alt);
       const safeTitle = title ? ' title="' + escapeAttr(title) + '"' : "";
       return preserveHtml('<img src="' + src + '" alt="' + safeAlt + '"' + safeTitle + ">");
@@ -392,6 +400,60 @@
     });
   }
 
+  function buildExportedHtml(filename) {
+    const contentEl = document.querySelector(".md-viewer-content");
+    const tocEl = document.querySelector(".md-toc");
+    const theme = document.documentElement.getAttribute("data-md-theme") === "dark" ? "dark" : "light";
+    const lang = document.documentElement.lang || "zh-CN";
+    const content = contentEl ? contentEl.innerHTML : "";
+    const toc = tocEl ? tocEl.outerHTML : "";
+    const layoutClass = "md-layout" + (toc ? " has-toc" : "");
+    return "<!doctype html>\n" +
+      '<html lang="' + escapeAttr(lang) + '" data-md-theme="' + theme + '">\n' +
+      "<head>\n" +
+      '<meta charset="utf-8">\n' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+      '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src file: data: http: https:; font-src data:">\n' +
+      "<title>" + escapeHtml(filename) + "</title>\n" +
+      "<style>" + stylesheet() + "</style>\n" +
+      "</head>\n" +
+      '<body class="md-viewer-body">\n' +
+      '<div class="' + layoutClass + '">' +
+      toc +
+      '<main class="md-viewer-shell">' +
+      '<div class="md-viewer-file">' + escapeHtml(filename) + "</div>" +
+      '<article class="md-viewer-content">' + content + "</article>" +
+      "</main>" +
+      "</div>\n" +
+      "</body>\n" +
+      "</html>\n";
+  }
+
+  function downloadCurrentAsHtml() {
+    const filename = decodeURIComponent(location.pathname.split("/").pop() || "Markdown");
+    const htmlFilename = filename.replace(MD_EXT_RE, "") + ".html";
+    const blob = new Blob([buildExportedHtml(filename)], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = htmlFilename;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function setupDownloadButton() {
+    const button = document.getElementById("mdDownloadHtml");
+    if (!button) return;
+    button.innerHTML = DOWNLOAD_ICON;
+    const label = document.createElement("span");
+    label.textContent = DOWNLOAD_LABEL;
+    button.appendChild(label);
+    button.addEventListener("click", downloadCurrentAsHtml);
+  }
+
   function stylesheet() {
     return `
       :root {
@@ -510,31 +572,45 @@
       }
       .md-toc-link.level-2 { padding-left: 18px; }
       .md-toc-link.level-3 { padding-left: 30px; font-size: 12px; }
-      .md-theme-toggle {
+      .md-toolbar {
         position: fixed;
-        top: 18px;
+        top: 32px;
         right: 18px;
         z-index: 10;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .md-toolbar-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 38px;
+        gap: 6px;
         height: 38px;
         margin: 0;
-        padding: 0;
+        padding: 0 12px;
         color: var(--md-button-text);
         background: var(--md-button-bg);
         border: 1px solid var(--md-border);
         border-radius: 8px;
         box-shadow: var(--md-shadow);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
         cursor: pointer;
       }
-      .md-theme-toggle:hover { background: var(--md-button-hover); }
-      .md-theme-toggle:focus-visible {
+      .md-toolbar-btn:hover { background: var(--md-button-hover); }
+      .md-toolbar-btn:focus-visible {
         outline: 2px solid var(--md-link);
         outline-offset: 2px;
       }
-      .md-theme-toggle svg {
+      .md-toolbar-btn.md-toolbar-btn--icon {
+        width: 38px;
+        padding: 0;
+      }
+      .md-toolbar-btn svg {
         width: 19px;
         height: 19px;
         fill: none;
@@ -631,11 +707,19 @@
           border-radius: 0;
           box-shadow: none;
         }
-        .md-theme-toggle {
+        .md-toolbar {
           top: 12px;
           right: 12px;
-          width: 34px;
+          gap: 6px;
+        }
+        .md-toolbar-btn {
           height: 34px;
+          padding: 0 10px;
+          font-size: 12px;
+        }
+        .md-toolbar-btn.md-toolbar-btn--icon {
+          width: 34px;
+          padding: 0;
         }
       }
     `;
@@ -664,7 +748,10 @@
 
     document.body.className = "md-viewer-body";
     document.body.innerHTML =
-      '<button type="button" class="md-theme-toggle" id="mdThemeToggle"></button>' +
+      '<div class="md-toolbar">' +
+      '<button type="button" class="md-toolbar-btn" id="mdDownloadHtml"></button>' +
+      '<button type="button" class="md-toolbar-btn md-toolbar-btn--icon" id="mdThemeToggle"></button>' +
+      "</div>" +
       '<div class="md-layout' + (toc ? " has-toc" : "") + '">' +
       toc +
       '<main class="md-viewer-shell">' +
@@ -673,6 +760,7 @@
       "</main>" +
       "</div>";
     setupThemeToggle();
+    setupDownloadButton();
 
     return true;
   }
