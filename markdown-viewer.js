@@ -423,6 +423,7 @@
       '<main class="md-viewer-shell">' +
       '<div class="md-viewer-file">' + escapeHtml(filename) + "</div>" +
       '<article class="md-viewer-content">' + content + "</article>" +
+      '<footer class="md-viewer-attribution">Rendered by <a href="https://markdownreader.cn/" target="_blank" rel="noopener noreferrer">Markdown Reader</a></footer>' +
       "</main>" +
       "</div>\n" +
       "</body>\n" +
@@ -674,6 +675,20 @@
       th, td { padding: 8px 10px; border: 1px solid var(--md-border); }
       th { background: var(--md-table-head); font-weight: 650; }
       hr { margin: 1.8em 0; border: 0; border-top: 1px solid var(--md-border); }
+      .md-viewer-attribution {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--md-subtle-border);
+        color: var(--md-muted);
+        font-size: 12px;
+        text-align: center;
+      }
+      .md-viewer-attribution a {
+        color: var(--md-muted);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .md-viewer-attribution a:hover { color: var(--md-link); }
       @media (max-width: 980px) {
         .md-layout {
           display: block;

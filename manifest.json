@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Markdown Reader",
-  "version": "1.1.5",
-  "description": "在 Chrome 中打开本地 Markdown 文件时，自动渲染为 HTML 阅读页，并支持浅色/黑色主题切换",
+  "name": "Markdown Reader – 本地 md 阅读 & HTML 导出",
+  "version": "1.1.6",
+  "description": "Chrome 本地 Markdown/md 文件阅读器：自动渲染阅读页，目录导航，一键下载 HTML，浅色/黑色主题，全部本地处理不上传。",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
